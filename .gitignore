@@ -4,3 +4,5 @@ pybpe.egg-info
 .DS_Store
 new-tokens.txt
 pybpe/__pycache__
+demo/homer.txt
+demo/tokens.txt

@@ -3,12 +3,12 @@ package main
 //#include <stdlib.h>
 import "C"
 import (
-	"fmt"
-	"os"
 	"bufio"
 	"encoding/json"
+	"os"
 	"strings"
 	"unsafe"
+	"sort"
 )
 type Node struct {
 	index uint16
@@ -104,12 +104,14 @@ func GenerateTokens(input_file *C.char, output_file *C.char, max_n_tokens_ C.int
 
 		// create new token
 		tokens[token_index] = tokens[maxKey.a] + tokens[maxKey.b]
-		fmt.Printf(" %d / % d New Token %s\n", token_index, max_n_tokens, tokens[token_index])
+		// fmt.Printf(" %d / % d New Token %s\n", token_index, max_n_tokens, tokens[token_index])
 
 		// replace all appearances in the linked list by this new token
 		current = &startnode
 		for true {
-
+			if current == nil || current.next == nil {
+				break
+			}
 
 			if current.index == maxKey.a && current.next.index == maxKey.b {
 				next := current.next
@@ -163,4 +165,84 @@ func ReadTokens(input_file *C.char, delimiter *C.char) *C.char {
 func FreeString(str *C.char){
 	C.free(unsafe.Pointer(str))
 }
+
+type Tokens []string
+
+func (t Tokens) Len() int 				{return len(t)}
+func (t Tokens) Less(i, j int) bool 	{return len(t[i]) > len(t[j]) }
+func (t Tokens) Swap(i, j int) 		{t[i], t[j] = t[j], t[i]}
+
+//export Encode
+func Encode(str *C.char, tokensstring *C.char) *C.char {
+	// get tokens as []string
+	var tokens []string
+	err := json.Unmarshal([]byte(C.GoString(tokensstring)), &tokens)
+	if err != nil {
+		return nil
+	}
+
+	src := C.GoString(str)
+
+	// build a token map that stores the indices of the individual tokens 
+	tokenmap := map[string]uint16{}
+	for i, tok := range tokens {
+		tokenmap[tok] = uint16(i)
+	}
+
+	// build a sorted tokens array
+	sort.Sort(Tokens(tokens))
+	
+	var tokenized []uint16
+
+	i := 0
+	n := len(src)
+
+	for i < n{
+		match_found := false
+
+		for _, tok := range(tokens) {
+			l := len(tok)
+			if l == 0 {
+				continue
+			}
+			if strings.HasPrefix(src[i:], tok) {
+				tokenized = append(tokenized, tokenmap[tok])
+				i += l
+				match_found = true
+				break
+			}
+		}
+		if !match_found {
+			i += 1
+		}
+	}
+
+	jsonTokenized, _ := json.Marshal(tokenized)
+	return C.CString(string(jsonTokenized))
+
+}
+
+//export Decode
+func Decode(str *C.char, jsontokens *C.char) *C.char {
+	// get tokens as []string
+	var tokens []string
+	err := json.Unmarshal([]byte(C.GoString(jsontokens)), &tokens)
+	if err != nil {
+		return nil
+	}
+
+	var encoded []uint16
+	err = json.Unmarshal([]byte(C.GoString(str)), &encoded)
+	if err != nil {
+		return nil
+	}
+
+	decoded := ""
+	for _, ti := range(encoded) {
+		decoded += tokens[ti]
+	} 
+
+	return C.CString(decoded)
+}
+
 func main(){}

@@ -47,3 +47,38 @@ def ReadTokens(input_file:str, delimiter:str='@@') -> [str]:
         _lib.FreeString(ptr)
     
 
+# encode
+_lib.Encode.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+_lib.Encode.restype = ctypes.c_void_p
+
+def Encode(input:str, tokens:[str]) -> [int]:
+    """Encodes a string to a list of token indices"""
+    jsontokens = json.dumps(tokens)
+    ptr = _lib.Encode(input.encode('utf-8'), jsontokens.encode('utf-8'))
+    if not ptr:
+        return []
+    try:
+        cstr = ctypes.cast(ptr, ctypes.c_char_p)
+        jsonstr = cstr.value.decode('utf-8')
+        encoded = json.loads(jsonstr)
+        return encoded
+    finally:
+        _lib.FreeString(ptr)
+
+# decode
+_lib.Decode.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+_lib.Decode.restype = ctypes.c_void_p
+
+def Decode(input:[int], tokens:[str]) -> str:
+    """Decodes a list of token indices to a string"""
+    jsontokens = json.dumps(tokens)
+    jsonencoded = json.dumps(input)
+    ptr = _lib.Decode(jsonencoded.encode('utf-8'), jsontokens.encode('utf-8'))
+    if not ptr:
+        return []
+    try:
+        cstr = ctypes.cast(ptr, ctypes.c_char_p)
+        decoded = cstr.value.decode('utf-8')
+        return decoded
+    finally:
+        _lib.FreeString(ptr)
