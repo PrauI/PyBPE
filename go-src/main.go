@@ -18,7 +18,7 @@ type Tuple struct {
 }
 
 //export GenerateTokens
-func GenerateTokens(input_file *C.char, output_file *C.char, max_n_tokens_ C.int) C.int{
+func GenerateTokens(input_file *C.char, output_file *C.char, max_n_tokens_ C.int, delimiter *C.char) C.int{
 	path := C.GoString(input_file)
 	dat, err := os.ReadFile(path)
 	if err != nil {
@@ -136,7 +136,7 @@ func GenerateTokens(input_file *C.char, output_file *C.char, max_n_tokens_ C.int
 	output.Sync()
 	w := bufio.NewWriter(output)
 	for _, token := range(tokens){
-		_, _ = w.WriteString(token + "@@")
+		_, _ = w.WriteString(token + C.GoString(delimiter))
 	}
 	w.Flush()
 	return C.int(0)
