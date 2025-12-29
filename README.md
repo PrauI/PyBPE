@@ -9,4 +9,5 @@ make install
 ```
 
 ## Usage
- todo
+- [Tokenizer class example](demo/demo2.py)
+- [Individual functions example](demo/demo.py)
