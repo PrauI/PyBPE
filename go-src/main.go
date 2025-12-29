@@ -1,10 +1,14 @@
 package main
 
+//#include <stdlib.h>
+import "C"
 import (
 	"fmt"
 	"os"
 	"bufio"
-	"C"
+	"encoding/json"
+	"strings"
+	"unsafe"
 )
 type Node struct {
 	index uint16
@@ -142,4 +146,21 @@ func GenerateTokens(input_file *C.char, output_file *C.char, max_n_tokens_ C.int
 	return C.int(0)
 }
 
+//export ReadTokens
+func ReadTokens(input_file *C.char, delimiter *C.char) *C.char {
+	path := C.GoString(input_file)
+	dat, err := os.ReadFile(path)
+	if err != nil {
+		return C.CString("")
+	}
+	tokens := strings.Split(string(dat), C.GoString(delimiter))
+	jsonTokens, _ := json.Marshal(tokens)
+
+	return C.CString(string(jsonTokens))
+}
+
+//export FreeString
+func FreeString(str *C.char){
+	C.free(unsafe.Pointer(str))
+}
 func main(){}

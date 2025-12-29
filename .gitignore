@@ -3,3 +3,4 @@ bin
 pybpe.egg-info
 .DS_Store
 new-tokens.txt
+pybpe/__pycache__
